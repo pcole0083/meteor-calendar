@@ -1,13 +1,17 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
+
+import moment from 'moment'; //for workiing with Date funcitonality
+import InputMoment from 'input-moment'; //date picker
+
 import { Meteor } from 'meteor/meteor';
 import { createContainer } from 'meteor/react-meteor-data';
 
-import { Tasks } from '../api/tasks.js';
+import { Bookings } from '../api/bookings.js'; //bookings data
 
-import Task from './Task.jsx';
-import AccountsUIWrapper from './AccountsUIWrapper.jsx';
+import Booking from './components/Booking.jsx'; //bookings view
+import AccountsUIWrapper from './AccountsUIWrapper.jsx'; //acounts ui view
 
 // App component - represents the whole app
 class App extends Component {
@@ -16,19 +20,32 @@ class App extends Component {
  
     this.state = {
       hideCompleted: false,
+      m: moment(),
+      end: moment().add(1, 'hours')
     };
   }
+
+  handleChange = m => {
+    this.setState({ m, end });
+  };
 
   handleSubmit(event) {
     event.preventDefault();
  
-    // Find the text field via the React ref
-    const text = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
- 
-    Meteor.call('tasks.insert', text);
- 
-    // Clear form
-    ReactDOM.findDOMNode(this.refs.textInput).value = '';
+    // Find the text fields via the React ref
+    let uname = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
+    let reason = ReactDOM.findDOMNode(this.refs.purposeInput).value.trim();
+
+    let start = this.state.m.format('llll'); //save in a readable format so we dn't have to parse later
+    let end = this.state.m.add(1, 'hours').format('llll'); //save in a readable format so we dn't have to parse later
+    /**
+     * To extend this to have a variable end time, change the end state reference to pull seperately from the UI.
+     * handleEndChange = end => {...}
+     */
+
+    Meteor.call('bookings.insert', uname, reason, start, end); //insert new record
+    // Clear purpose form field but not name in case they want to book another
+    ReactDOM.findDOMNode(this.refs.purposeInput).value = '';
   }
 
   toggleHideCompleted() {
@@ -37,20 +54,20 @@ class App extends Component {
     });
   }
 
-  renderTasks() {
-    let filteredTasks = this.props.tasks;
+  renderBookings() {
+    let filteredBookings = this.props.bookings;
     if (this.state.hideCompleted) {
-      filteredTasks = filteredTasks.filter(task => !task.checked);
+      filteredBookings = filteredBookings.filter(booking => !booking.checked);
     }
 
-    return filteredTasks.map((task) => {
+    return filteredBookings.map((booking) => {
       const currentUserId = this.props.currentUser && this.props.currentUser._id;
-      const showPrivateButton = task.owner === currentUserId;
+      const showPrivateButton = booking.owner === currentUserId;
  
       return (
-        <Task
-          key={task._id}
-          task={task}
+        <Booking
+          key={booking._id}
+          booking={booking}
           showPrivateButton={showPrivateButton}
         />
       );
@@ -61,7 +78,7 @@ class App extends Component {
     return (
       <div className="container">
         <header>
-          <h1>Todo List ({this.props.incompleteCount})</h1>
+          <h1>Book Your Appointment ({this.props.incompleteCount})</h1>
 
           <label className="hide-completed">
             <input
@@ -70,24 +87,47 @@ class App extends Component {
               checked={this.state.hideCompleted}
               onClick={this.toggleHideCompleted.bind(this)}
             />
-            Hide Completed Tasks
+            Hide Completed Bookings
           </label>
 
           <AccountsUIWrapper />
 
           { this.props.currentUser ?
-            <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
-              <input
-                type="text"
-                ref="textInput"
-                placeholder="Type to add new tasks"
+            <form className="new-booking" onSubmit={this.handleSubmit.bind(this)} >
+              <div className="input-wrapper">
+                <button className="btn" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  ref="textInput"
+                  placeholder="Name for Booking"
+                  defaultValue={this.props.currentUser.username}
+                />
+              </div>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  ref="purposeInput"
+                  placeholder="Purpose for booking"
+                />
+              </div>
+              <div className="input-wrapper">
+                <input type="text" ref="dateInput" value={this.state.m.format('llll')} readOnly />
+              </div>
+              <InputMoment
+                moment={this.state.m}
+                onChange={this.handleChange}
               />
+              <div className="input-wrapper">
+                <button className="btn" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+              </div>
             </form> : ''
           }
         </header>
 
         <ul>
-          {this.renderTasks()}
+          {this.renderBookings()}
         </ul>
       </div>
     );
@@ -95,17 +135,17 @@ class App extends Component {
 }
 
 App.propTypes = {
-  tasks: PropTypes.array.isRequired,
+  bookings: PropTypes.array.isRequired,
   incompleteCount: PropTypes.number.isRequired,
   currentUser: PropTypes.object,
 };
 
 export default createContainer(() => {
-  Meteor.subscribe('tasks');
+  Meteor.subscribe('bookings');
 
   return {
-    tasks: Tasks.find({}, { sort: { createdAt: -1 } }).fetch(),
-    incompleteCount: Tasks.find({ checked: { $ne: true } }).count(),
+    bookings: Bookings.find({}, { sort: { createdAt: -1 } }).fetch(),
+    incompleteCount: Bookings.find({ checked: { $ne: true } }).count(),
     currentUser: Meteor.user(),
   };
 }, App);

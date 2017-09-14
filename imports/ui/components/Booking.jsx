@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import moment from 'moment'; //for workiing with Date funcitonality
 import { Meteor } from 'meteor/meteor';
 import classnames from 'classnames';
 
@@ -42,13 +43,16 @@ export default class Booking extends Component {
         />
  
         <div className="text">
+          <strong>Room #</strong>: {this.props.booking.room}
+        </div>
+        <div className="text">
           <strong>Name</strong>: {this.props.booking.name}
         </div>
         <div className="text">
           <strong>Purpose</strong>: {this.props.booking.purpose}
         </div>
         <div className="text">
-          <strong>Booking Start/End</strong>: {this.props.booking.start} / {this.props.booking.end}
+          <strong>Booking Start/End</strong>: {moment(this.props.booking.start).format('llll')} / {moment(this.props.booking.end).format('llll')}
         </div>
 
         { this.props.showPrivateButton ? (

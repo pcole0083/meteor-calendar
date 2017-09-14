@@ -20,30 +20,30 @@ class App extends Component {
  
     this.state = {
       hideCompleted: false,
-      m: moment(),
-      end: moment().add(1, 'hours')
+      m: moment()
     };
   }
 
   handleChange = m => {
-    this.setState({ m, end });
+    this.setState({ m });
   };
 
   handleSubmit(event) {
     event.preventDefault();
  
     // Find the text fields via the React ref
+    let room = ReactDOM.findDOMNode(this.refs.roomInput).value.trim();
     let uname = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
     let reason = ReactDOM.findDOMNode(this.refs.purposeInput).value.trim();
 
-    let start = this.state.m.format('llll'); //save in a readable format so we dn't have to parse later
-    let end = this.state.m.add(1, 'hours').format('llll'); //save in a readable format so we dn't have to parse later
+    let start = this.state.m.valueOf(); //save in a readable format so we dn't have to parse later
+    let end = moment(this.state.m).add(1, 'hours').valueOf(); //save in a readable format so we dn't have to parse later
     /**
      * To extend this to have a variable end time, change the end state reference to pull seperately from the UI.
      * handleEndChange = end => {...}
      */
 
-    Meteor.call('bookings.insert', uname, reason, start, end); //insert new record
+    Meteor.call('bookings.insert', Number(room), uname, reason, start, end); //insert new record
     // Clear purpose form field but not name in case they want to book another
     ReactDOM.findDOMNode(this.refs.purposeInput).value = '';
   }
@@ -78,7 +78,7 @@ class App extends Component {
     return (
       <div className="container">
         <header>
-          <h1>Book Your Appointment ({this.props.incompleteCount})</h1>
+          <h1>Book Your Meeting</h1>
 
           <label className="hide-completed">
             <input
@@ -96,6 +96,14 @@ class App extends Component {
             <form className="new-booking" onSubmit={this.handleSubmit.bind(this)} >
               <div className="input-wrapper">
                 <button className="btn" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  ref="roomInput"
+                  placeholder="Room Number 1, 2, 3"
+                  defaultValue="1"
+                />
               </div>
               <div className="input-wrapper">
                 <input
@@ -136,7 +144,6 @@ class App extends Component {
 
 App.propTypes = {
   bookings: PropTypes.array.isRequired,
-  incompleteCount: PropTypes.number.isRequired,
   currentUser: PropTypes.object,
 };
 
@@ -145,7 +152,6 @@ export default createContainer(() => {
 
   return {
     bookings: Bookings.find({}, { sort: { createdAt: -1 } }).fetch(),
-    incompleteCount: Bookings.find({ checked: { $ne: true } }).count(),
     currentUser: Meteor.user(),
   };
 }, App);

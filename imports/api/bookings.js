@@ -32,8 +32,8 @@ Meteor.methods({
     let existing = Bookings.findOne({
       $and: [
         { room: room },
-        { start: { start } },
-        { end:   { end } },
+        { start: { $gte: start } },
+        { end:   { $lte: start } },
       ]
     });
 
@@ -41,7 +41,12 @@ Meteor.methods({
       throw new Meteor.Error('Booking already exists for that room during that time.');
     }
 
+    if(!purpose){
+      purpose = 'N/A';
+    }
+
     Bookings.insert({
+      room: room,
       name: name,
       purpose: purpose,
       createdAt: new Date(), //created at date record, not to be mistake for start and end

@@ -93,7 +93,7 @@ class App extends Component {
       const showPrivateButton = booking.owner === currentUserId;
  
       return {
-        'title': booking.name+': '+booking.purpose,
+        'title': 'Room  #'+booking.room+': '+booking.name,
         'start': new Date(booking.start),
         'end': new Date(booking.end),
         'desc': booking.purpose
@@ -111,6 +111,8 @@ class App extends Component {
         />
       </div>
     );
+    //startAccessor tells big calendar what property of the events to use as the start datetime (required)
+    //endAccessor tells big calendar what property of the events to use as the end datetime (required)
   }
 
   render() {
@@ -167,20 +169,24 @@ class App extends Component {
           }
         </header>
 
-        <div>
+        <section>
+          <h2>Confernce Rooms Calendar</h2>
           {this.renderCalendar()}
-        </div>
-        <ul>
-          {this.renderBookings()}
-        </ul>
-        <label className="hide-completed">
-          <input
-            type="checkbox"
-            readOnly
-            checked={this.state.hideCompleted}
-            onClick={this.toggleHideCompleted.bind(this)}
-          />&nbsp;Hide Completed Bookings
-        </label>
+        </section>
+        <section>
+        <h2>Bookings Full List</h2>
+          <ul>
+            {this.renderBookings()}
+          </ul>
+          <label className="hide-completed">
+            <input
+              type="checkbox"
+              readOnly
+              checked={this.state.hideCompleted}
+              onClick={this.toggleHideCompleted.bind(this)}
+            />&nbsp;Hide Completed Bookings
+          </label>
+        </section>
       </div>
     );
   }

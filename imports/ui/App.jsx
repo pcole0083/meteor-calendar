@@ -62,6 +62,8 @@ class App extends Component {
     });
   }
 
+  //render the list view
+  //could be moved to seperate component
   renderBookings() {
     let filteredBookings = this.props.bookings;
     if (this.state.hideCompleted) {
@@ -82,6 +84,8 @@ class App extends Component {
     });
   }
 
+  //render the calendar view
+  //could be moved to seperate component
   renderCalendar() {
     let filteredBookings = this.props.bookings;
     if (this.state.hideCompleted) {
@@ -115,6 +119,7 @@ class App extends Component {
     //endAccessor tells big calendar what property of the events to use as the end datetime (required)
   }
 
+  //app render
   render() {
     return (
       <div className="container">

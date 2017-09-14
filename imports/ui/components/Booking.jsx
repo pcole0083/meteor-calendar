@@ -57,8 +57,8 @@ export default class Booking extends Component {
 
         { this.props.showPrivateButton ? (
           <div className="text">
-            <button className="toggle-private" onClick={this.togglePrivate.bind(this)}>
-              { this.props.booking.private ? 'Hide' : 'Public' }
+            <button className="btn btn-danger toggle-private" onClick={this.togglePrivate.bind(this)}>
+              { !this.props.booking.private ? 'Make Private' : 'Make Public' }
             </button>
           </div>
         ) : ''}

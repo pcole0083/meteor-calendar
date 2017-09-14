@@ -2,6 +2,8 @@ import { Meteor } from 'meteor/meteor';
 import { Mongo } from 'meteor/mongo';
 import { check } from 'meteor/check';
 
+import moment from 'moment'; //for workiing with Date funcitonality
+
 export const Bookings = new Mongo.Collection('bookings');
 
 if (Meteor.isServer) {
@@ -21,24 +23,35 @@ Meteor.methods({
   'bookings.insert'(room = 1, name, purpose, start, end) {
     check(name, String);
     check(purpose, String);
+    check(start, Number);
+    check(end, Number);
 
     // Make sure the user is logged in before inserting a booking
     if (! Meteor.userId()) {
       throw new Meteor.Error('not-authorized');
     }
 
-    //this is very much overly simplistic
-    //the dates should be saved in milliseconds and then existing can check $gte, $lte, etc.
-    let existing = Bookings.findOne({
+    //check to find at least one record with a start time during an existing
+    //add check for end time during an existing
+    let booking_collection = Bookings.find({
       $and: [
-        { room: room },
-        { start: { $gte: start } },
-        { end:   { $lte: start } },
-      ]
+        { room:  { $eq:  room } }, //find all bookings for this room, can make this better by adding start and end checks here, but that query isn't working at the moment
+      ], //sort by latest start time
+    },{ sort: { start: -1 } }).fetch().filter(function(booking, index){
+      if(start >= booking.start && start < booking.end){
+        return booking;
+      }
+      if(booking.start >= end && booking.end <= end){ //why not >=? because people like to book meetings at 4:00pm-5:00pm & 5:00pm-6:00pm, not 4:00px-5:00-pm & 5:01pm-6:01pm.
+        return booking;
+      }
     });
 
-    if( existing ) {
-      throw new Meteor.Error('Booking already exists for that room during that time.');
+    // console.log(start);
+    // console.log(booking_collection);
+
+    if( booking_collection.length > 0 ) {
+      //let the user know the booking time that is blocking their meeting.
+      throw new Meteor.Error('Booking already exists for that room during for '+moment(booking_collection[0].start).format('llll')+' to '+ moment(booking_collection[0].end).format('llll'));
     }
 
     if(!purpose){

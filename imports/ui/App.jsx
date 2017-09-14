@@ -5,6 +5,9 @@ import ReactDOM from 'react-dom';
 import moment from 'moment'; //for workiing with Date funcitonality
 import InputMoment from 'input-moment'; //date picker
 
+import BigCalendar from 'react-big-calendar';
+BigCalendar.momentLocalizer(moment); // or globalizeLocalizer
+
 import { Meteor } from 'meteor/meteor';
 import { createContainer } from 'meteor/react-meteor-data';
 
@@ -32,7 +35,7 @@ class App extends Component {
     event.preventDefault();
  
     // Find the text fields via the React ref
-    let room = ReactDOM.findDOMNode(this.refs.roomInput).value.trim();
+    let room = ~~ReactDOM.findDOMNode(this.refs.roomInput).value.trim(); //convert to ~~int
     let uname = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
     let reason = ReactDOM.findDOMNode(this.refs.purposeInput).value.trim();
 
@@ -43,7 +46,12 @@ class App extends Component {
      * handleEndChange = end => {...}
      */
 
-    Meteor.call('bookings.insert', Number(room), uname, reason, start, end); //insert new record
+    //insert new record
+    Meteor.call('bookings.insert', Number(room), uname, reason, start, end, function(error, result) {
+      if(!!error){
+        alert(error.error);
+      }
+    });
     // Clear purpose form field but not name in case they want to book another
     ReactDOM.findDOMNode(this.refs.purposeInput).value = '';
   }
@@ -74,30 +82,52 @@ class App extends Component {
     });
   }
 
+  renderCalendar() {
+    let filteredBookings = this.props.bookings;
+    if (this.state.hideCompleted) {
+      filteredBookings = filteredBookings.filter(booking => !booking.checked);
+    }
+
+    let events = filteredBookings.map((booking) => {
+      const currentUserId = this.props.currentUser && this.props.currentUser._id;
+      const showPrivateButton = booking.owner === currentUserId;
+ 
+      return {
+        'title': booking.name+': '+booking.purpose,
+        'start': new Date(booking.start),
+        'end': new Date(booking.end),
+        'desc': booking.purpose
+      };
+    });
+
+    return (
+      <div>
+        <BigCalendar
+          events={events}
+          startAccessor='start'
+          endAccessor='end'
+          defaultView='day'
+          views={['day', 'week']}
+        />
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="container">
         <header>
           <h1>Book Your Meeting</h1>
 
-          <label className="hide-completed">
-            <input
-              type="checkbox"
-              readOnly
-              checked={this.state.hideCompleted}
-              onClick={this.toggleHideCompleted.bind(this)}
-            />
-            Hide Completed Bookings
-          </label>
-
           <AccountsUIWrapper />
 
           { this.props.currentUser ?
             <form className="new-booking" onSubmit={this.handleSubmit.bind(this)} >
               <div className="input-wrapper">
-                <button className="btn" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+                <button className="btn btn-default" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
               </div>
               <div className="input-wrapper">
+                <label><strong>Room #</strong></label>
                 <input
                   type="text"
                   ref="roomInput"
@@ -106,6 +136,7 @@ class App extends Component {
                 />
               </div>
               <div className="input-wrapper">
+                <label><strong>Name</strong></label>
                 <input
                   type="text"
                   ref="textInput"
@@ -114,6 +145,7 @@ class App extends Component {
                 />
               </div>
               <div className="input-wrapper">
+                <label><strong>Purpose</strong></label>
                 <input
                   type="text"
                   ref="purposeInput"
@@ -121,6 +153,7 @@ class App extends Component {
                 />
               </div>
               <div className="input-wrapper">
+                <label><strong>Datetime</strong></label>
                 <input type="text" ref="dateInput" value={this.state.m.format('llll')} readOnly />
               </div>
               <InputMoment
@@ -128,15 +161,26 @@ class App extends Component {
                 onChange={this.handleChange}
               />
               <div className="input-wrapper">
-                <button className="btn" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+                <button className="btn btn-default" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
               </div>
             </form> : ''
           }
         </header>
 
+        <div>
+          {this.renderCalendar()}
+        </div>
         <ul>
           {this.renderBookings()}
         </ul>
+        <label className="hide-completed">
+          <input
+            type="checkbox"
+            readOnly
+            checked={this.state.hideCompleted}
+            onClick={this.toggleHideCompleted.bind(this)}
+          />&nbsp;Hide Completed Bookings
+        </label>
       </div>
     );
   }

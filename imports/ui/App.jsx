@@ -14,6 +14,7 @@ import { createContainer } from 'meteor/react-meteor-data';
 import { Bookings } from '../api/bookings.js'; //bookings data
 
 import Booking from './components/Booking.jsx'; //bookings view
+import Calendar from './components/Calendar.jsx'; //bookings view
 import AccountsUIWrapper from './AccountsUIWrapper.jsx'; //acounts ui view
 
 // App component - represents the whole app
@@ -23,8 +24,14 @@ class App extends Component {
  
     this.state = {
       hideCompleted: false,
-      m: moment()
+      m: moment(),
+      modalOpen: false,
+      modalKey: null
     };
+  }
+
+  componentWillReceiveProps(nextProps) {
+
   }
 
   handleChange = m => {
@@ -56,6 +63,10 @@ class App extends Component {
     ReactDOM.findDOMNode(this.refs.purposeInput).value = '';
   }
 
+  showModal = ((key) => {
+    this.setState({ modalOpen: !!key, modalKey: key});
+  })
+
   toggleHideCompleted() {
     this.setState({
       hideCompleted: !this.state.hideCompleted,
@@ -79,6 +90,9 @@ class App extends Component {
           key={booking._id}
           booking={booking}
           showPrivateButton={showPrivateButton}
+          show={this.state.modalOpen}
+          showKey={this.state.modalKey}
+          closeModal={this.showModal}
         />
       );
     });
@@ -87,33 +101,12 @@ class App extends Component {
   //render the calendar view
   //could be moved to seperate component
   renderCalendar() {
-    let filteredBookings = this.props.bookings;
-    if (this.state.hideCompleted) {
-      filteredBookings = filteredBookings.filter(booking => !booking.checked);
-    }
-
-    let events = filteredBookings.map((booking) => {
-      const currentUserId = this.props.currentUser && this.props.currentUser._id;
-      const showPrivateButton = booking.owner === currentUserId;
- 
-      return {
-        'title': 'Room  #'+booking.room+': '+booking.name,
-        'start': new Date(booking.start),
-        'end': new Date(booking.end),
-        'desc': booking.purpose
-      };
-    });
-
     return (
-      <div>
-        <BigCalendar
-          events={events}
-          startAccessor='start'
-          endAccessor='end'
-          defaultView='day'
-          views={['day', 'week']}
+        <Calendar
+          bookings={this.props.bookings}
+          currentUser={this.props.currentUser}
+          showModal={this.showModal}
         />
-      </div>
     );
     //startAccessor tells big calendar what property of the events to use as the start datetime (required)
     //endAccessor tells big calendar what property of the events to use as the end datetime (required)
@@ -121,6 +114,11 @@ class App extends Component {
 
   //app render
   render() {
+    let modalClassName = 'modal fade';
+    if(!!this.state.modalOpen){
+      modalClassName += ' in';
+    }
+
     return (
       <div className="container">
         <header>
@@ -178,19 +176,14 @@ class App extends Component {
           <h2>Confernce Rooms Calendar</h2>
           {this.renderCalendar()}
         </section>
-        <section>
-        <h2>Bookings Full List</h2>
-          <ul>
-            {this.renderBookings()}
-          </ul>
-          <label className="hide-completed">
-            <input
-              type="checkbox"
-              readOnly
-              checked={this.state.hideCompleted}
-              onClick={this.toggleHideCompleted.bind(this)}
-            />&nbsp;Hide Completed Bookings
-          </label>
+        <section ref="bookingsList" className={modalClassName} tabIndex="-1" role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+            <ul>
+              {this.renderBookings()}
+            </ul>
+            </div>
+          </div>
         </section>
       </div>
     );

@@ -1,0 +1,7 @@
+{
+  "galaxy.meteor.com": {
+     "env": {
+       "MONGO_URL": "mongodb://pcoleadmin:pcole_admin@ds135444.mlab.com:35444/meteor-calendar"
+     }
+   }
+}

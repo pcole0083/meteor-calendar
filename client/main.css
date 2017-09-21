@@ -73,7 +73,7 @@ ul {
   background: white;
 }
 
-.delete {
+/* .delete {
   position: absolute;
   right:  20px;
   top:  20px;
@@ -82,7 +82,7 @@ ul {
   font-size: 1em;
   border: none;
   cursor: pointer;
-}
+} */
 
 li {
   position: relative;
@@ -914,6 +914,10 @@ button.rbc-input::-moz-focus-inner {
 .rbc-rtl .rbc-current-time-indicator::before {
   left: 0;
   right: -3px;
+}
+
+.modal.fade.in {
+  display: block;
 }
 
 @media (max-width: 600px) {

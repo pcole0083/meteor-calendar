@@ -24,18 +24,21 @@ class App extends Component {
  
     this.state = {
       hideCompleted: false,
-      m: moment(),
+      m1: moment(),
+      m2: moment(),
       modalOpen: false,
-      modalKey: null
+      modalKey: null,
+      datepickerOpen: false,
+      datepicker2Open: false,
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  handleChange = m1 => {
+    this.setState({ m1 });
+  };
 
-  }
-
-  handleChange = m => {
-    this.setState({ m });
+  handleEndChange = m2 => {
+    this.setState({ m2 });
   };
 
   handleSubmit(event) {
@@ -46,25 +49,32 @@ class App extends Component {
     let uname = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
     let reason = ReactDOM.findDOMNode(this.refs.purposeInput).value.trim();
 
-    let start = this.state.m.valueOf(); //save in a readable format so we dn't have to parse later
-    let end = moment(this.state.m).add(1, 'hours').valueOf(); //save in a readable format so we dn't have to parse later
-    /**
-     * To extend this to have a variable end time, change the end state reference to pull seperately from the UI.
-     * handleEndChange = end => {...}
-     */
+    let start = this.state.m1.valueOf(); //save in a readable format so we dn't have to parse later
+    let end = this.state.m2.valueOf(); //save in a readable format so we dn't have to parse later
 
     //insert new record
     Meteor.call('bookings.insert', Number(room), uname, reason, start, end, function(error, result) {
       if(!!error){
         alert(error.error);
+        return false;
       }
     });
     // Clear purpose form field but not name in case they want to book another
     ReactDOM.findDOMNode(this.refs.purposeInput).value = '';
+
+    this.setState({ datepickerOpen: false });
   }
 
   showModal = ((key) => {
     this.setState({ modalOpen: !!key, modalKey: key});
+  })
+
+  toggleDatePicker1 = (() => {
+    this.setState({ datepickerOpen: !this.state.datepickerOpen });
+  })
+
+  toggleDatePicker2 = (() => {
+    this.setState({ datepicker2Open: !this.state.datepicker2Open });
   })
 
   toggleHideCompleted() {
@@ -119,6 +129,18 @@ class App extends Component {
       modalClassName += ' in';
     }
 
+    let datepicker = this.state.datepickerOpen ?
+              <InputMoment
+                moment={this.state.m1}
+                onChange={this.handleChange}
+              /> : '';
+
+    let datepicker2 = this.state.datepicker2Open ?
+              <InputMoment
+                moment={this.state.m2}
+                onChange={this.handleEndChange}
+              /> : '';
+
     return (
       <div className="container">
         <header>
@@ -128,46 +150,57 @@ class App extends Component {
 
           { this.props.currentUser ?
             <form className="new-booking" onSubmit={this.handleSubmit.bind(this)} >
-              <div className="input-wrapper">
-                <button className="btn btn-default" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+              <div className="row">
+                <div className="input-wrapper col-sm-8">
+                  <label><strong>Your Name</strong></label>
+                  <input
+                    type="text"
+                    ref="textInput"
+                    placeholder="Name for Booking"
+                    defaultValue={this.props.currentUser.username}
+                  />
+                </div>
+                <div className="input-wrapper col-sm-4">
+                  <label><strong>Room #</strong></label>
+                  <input
+                    type="number"
+                    ref="roomInput"
+                    placeholder="Room Number 1, 2, 3"
+                    defaultValue="1"
+                    min="1"
+                    max="3"
+                    step="1"
+                  />
+                </div>
               </div>
-              <div className="input-wrapper">
-                <label><strong>Room #</strong></label>
-                <input
-                  type="text"
-                  ref="roomInput"
-                  placeholder="Room Number 1, 2, 3"
-                  defaultValue="1"
-                />
+              <div className="row">
+                <div className="input-wrapper col-sm-12">
+                  <label><strong>Booking Purpose</strong></label>
+                  <input
+                    type="text"
+                    ref="purposeInput"
+                    placeholder="Please state meeting purpose or agenda"
+                  />
+                </div>
               </div>
-              <div className="input-wrapper">
-                <label><strong>Name</strong></label>
-                <input
-                  type="text"
-                  ref="textInput"
-                  placeholder="Name for Booking"
-                  defaultValue={this.props.currentUser.username}
-                />
+              <div className="row">
+                <div className="input-wrapper col-sm-6">
+                  <label><strong>Start Time</strong></label>
+                  <input type="text" ref="dateInput" value={this.state.m1.format('llll')} onClick={this.toggleDatePicker1} readOnly />
+                  {datepicker}
+                </div>
+                <div className="input-wrapper col-sm-6">
+                  <label><strong>End Time</strong></label>
+                  <input type="text" ref="endDateInput" value={this.state.m2.format('llll')} onClick={this.toggleDatePicker2} readOnly />
+                  {datepicker2}
+                </div>
               </div>
-              <div className="input-wrapper">
-                <label><strong>Purpose</strong></label>
-                <input
-                  type="text"
-                  ref="purposeInput"
-                  placeholder="Purpose for booking"
-                />
+              <div className="row">
+                <div className="input-wrapper col-sm-12">
+                  <button className="btn btn-primary" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
+                </div>
               </div>
-              <div className="input-wrapper">
-                <label><strong>Datetime</strong></label>
-                <input type="text" ref="dateInput" value={this.state.m.format('llll')} readOnly />
-              </div>
-              <InputMoment
-                moment={this.state.m}
-                onChange={this.handleChange}
-              />
-              <div className="input-wrapper">
-                <button className="btn btn-default" onClick={this.handleSubmit.bind(this)}>Add Booking</button>
-              </div>
+              <div className="clear"></div>
             </form> : ''
           }
         </header>

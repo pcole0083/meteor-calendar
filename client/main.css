@@ -126,6 +126,7 @@ body {
 
 .input-wrapper {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .input-wrapper input {
@@ -294,6 +295,12 @@ body {
   padding: 12px 15px;
   border-radius: 3px;
   border: 1px solid #dfe0e4;
+
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 5;
+  background-color: #ffffff;
 }
 .m-input-moment .options {
   width: 100%;

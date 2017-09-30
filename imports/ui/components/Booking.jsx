@@ -16,6 +16,7 @@ export default class Booking extends Component {
   }
  
   deleteThisBooking() {
+    this.closeEvent();
     Meteor.call('bookings.remove', this.props.booking._id);
   }
 
